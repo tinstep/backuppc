@@ -1,22 +1,67 @@
 #!/bin/bash
+
 date_ext=$(date '+%Y-%m-%d_%H-%M')
-mkdir -p /backups/mariadb
-mkdir -p /backups/influxdb
+logfile="/backups/backup.log"
+backup_retention="7" # Delete backups older than number of days
 
-#Delete old files
-find /backups/mariadb -name "*.gz" -type f -mtime +30 -delete
-find /backups/influxdb -type d -mtime +30 -delete
+backup_root="/backups"
+
+path_maria="mariadb"
+user_maria="admin"
+pass_maria="dsX4411"
+
+path_influx="influxdb"
+token_influx="xzMOjwRCkffyzg4UWr2EGAqT5Bi5dcut2vWawx_w-ep5do8v4Os6QM0fAM1T_QEc2_FMa1AKYAwuWbVXoV0vVQ=="
 
 
 
-mariabackup --user=XXXXX --password=XXXXXXXXX --backup --stream=xbstream | pigz -p 6 > "/backups/mariadb/backup_${date_ext}.gz"
+_initialize() {
+        [ -d $backup_root ] || mkdir $backup_root
+        [ -d $backup_root/$path_maria ] || mkdir $backup_root/$path_maria
+        [ -d $backup_root/$path_influx ] || mkdir $backup_root/$path_influx
+        [ -f $logfile ] || touch ${logfile}
+}
 
-echo ~~~~~~~~~~~ MARIADB FINISHED ~~~~~~~~~~
 
-influx backup \
-  "/backups/influxdb/backup_${date_ext}" -t xzMOjwRCkffyzg4UWr2----BLAHBLAH----AKYAwuWbVXoV0vVQ==
+_cleanup() {
+    echo "${date_ext} Deleting old backups - mariadb"
+    find ${backup_root}/${path_maria} -name "*.gz" -type f -mtime +${backup_retention} -delete
+    echo "${date_ext} Deleting old backups - influxdb"
+    find ${backup_root}/${path_influx} -type d -mtime +${backup_retention} -delete
+    echo "${date_ext} Cleanup done."
+}
 
-echo ~~~~~~~~~~~ INFLUXDB FINISHED ~~~~~~~~~~
+
+_maria_backup() {
+        echo "${date_ext} Starting MariaDB Backup."
+        mariabackup --user=${user_maria} --password=${pass_maria} --backup --stream=xbstream | pigz -p 6 > "${backup_root}/${path_maria}/backup_${date_ext}.gz"
+        echo "${date_ext} MariaDB Backup done."
+}
+
+
+_influx_backup() {
+        echo "${date_ext} Starting influxDB Backup."
+        influx backup "${backup_root}/${path_influx}/backup_${date_ext}" -t "${influxdb_token}"
+        echo "${date_ext} MariaDB Backup done."
+}
+
+
+
+_finalize() {
+    echo "${date_ext} Finished Backups."
+        echo "#################################################################"
+    exit 0
+}
+
+
+# Main
+_initialize >> "${logfile}" 2>&1
+_maria_backup >> "${logfile}" 2>&1
+_influx_backup >> "${logfile}" 2>&1
+_cleanup >> "${logfile}" 2>&1
+_finalize >> "${logfile}" 2>&1
+
+
 
 
 ###############MARIADB
