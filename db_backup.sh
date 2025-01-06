@@ -7,11 +7,11 @@ backup_retention="7" # Delete backups older than number of days
 backup_root="/backups"
 
 path_maria="mariadb"
-user_maria="admin"
-pass_maria="dsX4411"
+user_maria="USER"
+pass_maria="PASS"
 
 path_influx="influxdb"
-token_influx="xzMOjwRCkffyzg4UWr2EGAqT5Bi5dcut2vWawx_w-ep5do8v4Os6QM0fAM1T_QEc2_FMa1AKYAwuWbVXoV0vVQ=="
+token_influx="xzMOjwRCkffyzg4  BLAH  c2_FMa1AKYAwuWbVXoV0vVQ=="
 
 
 
